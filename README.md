@@ -1,26 +1,74 @@
-# Address Verification Application - Complete Code
+# VerifAi - Secure Address Verification System
 
 ## 🎯 Overview
 
-This is a complete address verification system that uses GPS location to verify a user's physical presence at their claimed address. The application features a simplified consent-based UI and includes file upload capabilities for supporting documents.
+VerifAi is a complete address verification system that uses GPS location to verify a user's physical presence at their claimed address. The application features:
+
+- **Secure Token-Based Links**: Generate unique, encrypted verification links for each customer
+- **API Key Management**: Issue API keys for external companies to integrate programmatically
+- **Admin Dashboard**: Manage verifications, API keys, and view analytics
+- **Public Verification**: Customers use personalized links to verify their address
+- **Location Verification**: High-accuracy GPS with Haversine distance calculation
+- **RESTful API**: Full API for programmatic access with authentication
+- **Security Features**: Single-use tokens, time expiration, revocation capability
+
+---
+
+## ✨ Key Features
+
+### 🔑 API Integration
+- **API Key Management**: Create, manage, and revoke API keys from the dashboard
+- **Secure Authentication**: SHA-256 hashed keys with bearer token support
+- **Usage Tracking**: Monitor API usage per key with timestamps
+- **Rate Limiting**: Configurable request limits (default: 1000/day)
+- **RESTful Endpoints**: Generate verifications, check status, list results
+- **Multi-Client Support**: Issue separate keys for different integrations
+
+### 🔐 Security
+- **Unique Verification Links**: Each customer gets a cryptographically secure, unique URL
+- **Token Encryption**: Customer data encrypted using HMAC-SHA256
+- **Single-Use Links**: Each link can only be used once to prevent replay attacks
+- **Time Expiration**: Links automatically expire after 24 hours
+- **Token Revocation**: Administrators can revoke links at any time
+- **Audit Trail**: Complete logging of IP addresses, user agents, and timestamps
+- **API Key Hashing**: Keys stored using SHA-256, never in plain text
+
+### 👤 User Experience
+- **Admin Dashboard**: Login, generate links, view verifications, and analytics
+- **Personalized Pages**: Customers see their own information pre-filled
+- **Mobile-Friendly**: Responsive design works on all devices
+- **Clear Consent Flow**: Transparent explanation of what data is collected
+- **Real-Time Results**: Immediate verification feedback
+
+### 📊 Features
+- Dashboard with verification statistics
+- Link generation interface
+- Verification history and analytics
+- Risk scoring based on location accuracy
+- Support for manual verification fallback
 
 ---
 
 ## 📦 What's Included
 
 ### **Frontend (React + Vite + Tailwind CSS)**
-- Simplified single-screen consent UI
-- Multi-state flow (pending, processing, success, denied, error)
+- Login/Authentication system
+- Admin dashboard with sidebar navigation
+- Link generation interface
+- Public verification page
+- Multi-state flow (validating, pending, processing, success, error)
 - High-accuracy GPS location capture
 - Responsive design for mobile and desktop
-- Professional UI components (shadcn/ui)
+- Professional UI components (shadcn/ui + Radix UI)
 
 ### **Backend (Python + Flask)**
+- Token generation and encryption (itsdangerous)
 - RESTful API with CORS support
 - Location verification with Haversine distance calculation
 - 500-meter verification threshold
 - Risk scoring algorithm
-- File upload endpoints (single and multiple)
+- Token validation and revocation endpoints
+- Audit logging and security metadata
 - Health check and monitoring endpoints
 
 ---
@@ -30,7 +78,7 @@ This is a complete address verification system that uses GPS location to verify 
 ### **Prerequisites**
 - Node.js 18+ (for frontend)
 - Python 3.11+ (for backend)
-- npm or pnpm (for frontend)
+- pnpm (recommended) or npm (for frontend)
 - pip (for backend)
 
 ### **Backend Setup**
@@ -47,16 +95,161 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
+# Set environment variables (create .env file)
+echo "SECRET_KEY=your-super-secret-key-change-this" > .env
+echo "FRONTEND_URL=http://localhost:5173" >> .env
+
 # Run the server
 python src/main.py
 ```
 
-Backend will start on `http://localhost:5001`
+Backend will run on `http://localhost:10000`
 
 ### **Frontend Setup**
 
 ```bash
 cd frontend
+
+# Install dependencies
+pnpm install  # or: npm install
+
+# Run development server
+pnpm dev  # or: npm run dev
+```
+
+Frontend will run on `http://localhost:5173`
+
+---
+
+## 🔗 Using the Verification Link System
+
+### For Administrators
+
+1. **Login to Dashboard**
+   - Navigate to `http://localhost:5173`
+   - Enter any email and password (demo mode)
+   - Click "Sign In"
+
+2. **Generate Verification Link**
+   - Click "Generate Link" in the sidebar
+   - Fill in customer information:
+     - Full Name
+     - Email Address
+     - Street Address
+     - City, State, ZIP Code
+     - Organization Name
+   - Click "Generate Verification Link"
+
+3. **Share the Link**
+   - Copy the generated URL
+   - Send to customer via email or SMS
+   - Link format: `http://localhost:5173/verify?token=eyJhbGc...`
+
+### For Customers
+
+1. **Receive Link**
+   - Customer receives unique verification link
+   - Link contains their encrypted information
+
+2. **Open Verification Page**
+   - Click the link
+   - System validates the token
+   - Personal information displayed for confirmation
+
+3. **Complete Verification**
+   - Review details (name, email, address)
+   - Click "Yes, I Consent"
+   - Grant location permission when prompted
+   - Wait for verification to complete
+   - View results
+
+### Security Features
+
+- **Unique Tokens**: Each link uses a 32-byte cryptographically secure random token
+- **Encryption**: All customer data is encrypted using HMAC-SHA256
+- **Single Use**: Links can only be used once
+- **Expiration**: Links expire after 24 hours
+- **Revocation**: Admins can revoke links before use
+- **Audit Trail**: IP addresses, user agents, and timestamps are logged
+
+---
+
+## 🔌 API Integration
+
+VerifAi provides a complete RESTful API for programmatic integration.
+
+### Quick Example
+
+```bash
+# Generate a verification link via API
+curl -X POST http://localhost:10000/api/v1/generate-verification \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: verifai_live_your_key" \
+  -d '{
+    "fullName": "John Doe",
+    "email": "john@example.com",
+    "address": "123 Main Street",
+    "city": "New York",
+    "state": "NY",
+    "zipCode": "10001"
+  }'
+```
+
+### API Features
+
+- **RESTful Design**: Standard HTTP methods and status codes
+- **API Key Authentication**: Secure key-based access
+- **Usage Tracking**: Monitor API usage per key
+- **Rate Limiting**: Configurable limits per key (default: 1000/day)
+- **Webhook Support**: Real-time notifications (coming soon)
+
+### Getting Started with the API
+
+1. **Create an API Key**
+   - Login to dashboard
+   - Navigate to "API Keys"
+   - Click "Create API Key"
+   - Copy and save the key (shown only once!)
+
+2. **Make Your First Request**
+   ```javascript
+   const response = await fetch('http://localhost:10000/api/v1/generate-verification', {
+     method: 'POST',
+     headers: {
+       'Content-Type': 'application/json',
+       'X-API-Key': 'verifai_live_your_key'
+     },
+     body: JSON.stringify({
+       fullName: 'John Doe',
+       email: 'john@example.com',
+       address: '123 Main St',
+       city: 'New York',
+       state: 'NY',
+       zipCode: '10001'
+     })
+   });
+   
+   const data = await response.json();
+   console.log(data.data.verificationUrl);
+   ```
+
+3. **Check Verification Status**
+   ```bash
+   curl -X GET http://localhost:10000/api/v1/verifications/{id} \
+     -H "X-API-Key: verifai_live_your_key"
+   ```
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/generate-verification` | POST | Generate a verification link |
+| `/api/v1/verifications/{id}` | GET | Get verification status |
+| `/api/v1/verifications` | GET | List all verifications |
+
+📚 **Full Documentation**: See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) and [API_QUICKSTART.md](API_QUICKSTART.md)
+
+---
 
 # Install dependencies
 npm install --legacy-peer-deps
