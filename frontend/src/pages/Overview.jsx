@@ -1,7 +1,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle2, XCircle, AlertCircle, TrendingUp } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 function Overview() {
+  const navigate = useNavigate()
+
+  const goToGenerate = () => navigate('/dashboard/generate-link')
+  const goToVerifications = () => navigate('/dashboard/verifications')
+  const handleExport = () => alert('Export report will be available soon. In the meantime, view verifications to filter and copy data.')
+
   const stats = [
     {
       title: 'Total Verifications',
@@ -65,7 +72,7 @@ function Overview() {
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
-            <Card key={stat.title}>
+            <Card key={stat.title} className="shadow-xl">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -87,7 +94,7 @@ function Overview() {
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="shadow-xl">
           <CardHeader>
             <CardTitle>Recent Verifications</CardTitle>
             <CardDescription>Latest verification requests</CardDescription>
@@ -112,22 +119,22 @@ function Overview() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-xl">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>Common tasks and operations</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <button className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <button onClick={goToGenerate} className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 hover:-translate-y-0.5">
                 <p className="font-medium text-gray-900">New Verification Request</p>
                 <p className="text-sm text-gray-500">Initiate a new address verification</p>
               </button>
-              <button className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <button onClick={goToVerifications} className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 hover:-translate-y-0.5">
                 <p className="font-medium text-gray-900">View All Verifications</p>
                 <p className="text-sm text-gray-500">See complete verification history</p>
               </button>
-              <button className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <button onClick={handleExport} className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 hover:-translate-y-0.5">
                 <p className="font-medium text-gray-900">Export Report</p>
                 <p className="text-sm text-gray-500">Download verification data</p>
               </button>

@@ -1,20 +1,69 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 import { API_BASE_URL } from '../config'
 
-// This would come from URL parameters in production
 const ORGANIZATION_NAME = 'ABC Bank'
 
 function VerificationPage() {
-  const [status, setStatus] = useState('pending') // pending, processing, success, denied, error
+  const [status, setStatus] = useState('loading') // loading, pending, processing, success, denied, error
   const [verificationResult, setVerificationResult] = useState(null)
   const [errorMessage, setErrorMessage] = useState(null)
+  const [verificationData, setVerificationData] = useState(null)
+
+  const token = useMemo(() => new URLSearchParams(window.location.search).get('token'), [])
+
+  useEffect(() => {
+    const validateToken = async () => {
+      if (!token) {
+        setErrorMessage('Missing verification token. Please open the link that was sent to you.')
+        setStatus('error')
+        return
+      }
+
+      try {
+        setStatus('loading')
+        const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Unable to validate verification link')
+        }
+
+        setVerificationData(data.verification_data)
+        setStatus('pending')
+      } catch (error) {
+        setErrorMessage(error.message)
+        setStatus('error')
+      }
+    }
+
+    validateToken()
+  }, [token])
+
+  const declineVerification = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/api/verification-declined`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      })
+    } catch (error) {
+      // Best-effort call; user flow should continue even if this fails
+      console.error('Failed to record decline', error)
+    }
+  }
 
   const handleConsent = async (consented) => {
     if (!consented) {
+      await declineVerification()
       setStatus('denied')
       return
     }
@@ -39,17 +88,13 @@ function VerificationPage() {
             accuracy: position.coords.accuracy
           }
 
-          // In a real implementation, you would get these from URL parameters
-          // or a session that was initiated by the organization
-          const verificationData = {
-            fullName: 'User Name', // Would come from organization's request
-            email: 'user@example.com', // Would come from organization's request
-            address: '123 Main Street', // Would come from organization's request
-            city: 'New York',
-            state: 'NY',
-            zipCode: '10001',
+          const submission = {
+            token,
             consent: true,
-            location: location
+            location,
+            userAgent: navigator.userAgent,
+            screenResolution: `${window.screen.width}x${window.screen.height}`,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
           }
 
           const response = await fetch(`${API_BASE_URL}/api/submit-verification`, {
@@ -57,7 +102,7 @@ function VerificationPage() {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify(verificationData)
+            body: JSON.stringify(submission)
           })
 
           const data = await response.json()
@@ -86,7 +131,7 @@ function VerificationPage() {
   }
 
   const resetVerification = () => {
-    setStatus('pending')
+    setStatus(verificationData ? 'pending' : 'loading')
     setVerificationResult(null)
     setErrorMessage(null)
   }
@@ -99,6 +144,21 @@ function VerificationPage() {
       </div>
 
       <div className="max-w-lg mx-auto">
+        {/* Loading token validation */}
+        {status === 'loading' && (
+          <Card className="shadow-lg">
+            <CardContent className="py-12">
+              <div className="text-center space-y-4">
+                <Loader2 className="w-16 h-16 mx-auto text-blue-600 animate-spin" />
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">Preparing Verification</h3>
+                  <p className="text-gray-600 mt-2">Validating your secure verification link...</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Pending - Show Consent Request */}
         {status === 'pending' && (
           <Card className="shadow-lg">
@@ -111,16 +171,16 @@ function VerificationPage() {
               </div>
               <CardTitle className="text-2xl">Address Verification Request</CardTitle>
               <CardDescription className="text-base mt-2">
-                {ORGANIZATION_NAME} wants to verify your address
+                {verificationData?.organizationName || ORGANIZATION_NAME} wants to verify your address
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  <strong>{ORGANIZATION_NAME}</strong> is requesting to verify your current location to confirm your address. 
+              <div className="bg-white/80 backdrop-blur-xl border border-white/60 rounded-lg p-4">
+                <p className="text-sm text-slate-900 leading-relaxed">
+                  <strong>{verificationData?.organizationName || ORGANIZATION_NAME}</strong> is requesting to verify your current location to confirm your address. 
                   This process will:
                 </p>
-                <ul className="mt-3 space-y-2 text-sm text-gray-600">
+                <ul className="mt-3 space-y-2 text-sm text-slate-800">
                   <li className="flex items-start">
                     <span className="mr-2">•</span>
                     <span>Access your device's location (GPS)</span>
@@ -131,10 +191,21 @@ function VerificationPage() {
                   </li>
                   <li className="flex items-start">
                     <span className="mr-2">•</span>
-                    <span>Share verification results with {ORGANIZATION_NAME}</span>
+                    <span>Share verification results with {verificationData?.organizationName || ORGANIZATION_NAME}</span>
                   </li>
                 </ul>
               </div>
+
+              {verificationData && (
+                <div className="bg-white/80 backdrop-blur-xl border border-white/60 rounded-lg p-4">
+                  <p className="text-sm font-medium text-slate-900 mb-2">Details we will verify</p>
+                  <ul className="text-sm text-slate-800 space-y-1">
+                    <li><strong>Name:</strong> {verificationData.fullName}</li>
+                    <li><strong>Email:</strong> {verificationData.email}</li>
+                    <li><strong>Address:</strong> {`${verificationData.address}, ${verificationData.city}, ${verificationData.state} ${verificationData.zipCode}`}</li>
+                  </ul>
+                </div>
+              )}
 
               <div className="text-center">
                 <p className="text-sm font-medium text-gray-900 mb-4">
@@ -205,7 +276,7 @@ function VerificationPage() {
 
                 <div className="pt-4">
                   <p className="text-sm text-gray-600 mb-4">
-                    {ORGANIZATION_NAME} has been notified of your verification results.
+                    {verificationData?.organizationName || ORGANIZATION_NAME} has been notified of your verification results.
                   </p>
                   <Button onClick={resetVerification} variant="outline" className="w-full">
                     New Verification
@@ -231,7 +302,7 @@ function VerificationPage() {
 
                 <Alert className="border-gray-200 bg-gray-50">
                   <AlertDescription className="text-sm text-gray-700">
-                    {ORGANIZATION_NAME} has been notified that you declined the verification request. 
+                    {verificationData?.organizationName || ORGANIZATION_NAME} has been notified that you declined the verification request. 
                     You may need to complete verification through an alternative method.
                   </AlertDescription>
                 </Alert>
@@ -270,7 +341,7 @@ function VerificationPage() {
                     Try Again
                   </Button>
                   <p className="text-xs text-gray-500">
-                    If the problem persists, please contact {ORGANIZATION_NAME} for assistance.
+                    If the problem persists, please contact {verificationData?.organizationName || ORGANIZATION_NAME} for assistance.
                   </p>
                 </div>
               </div>

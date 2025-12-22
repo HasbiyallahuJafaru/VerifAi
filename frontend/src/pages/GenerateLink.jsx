@@ -35,11 +35,19 @@ function GenerateLink() {
     setIsLoading(true)
     setGeneratedLink(null)
 
+    const token = localStorage.getItem('accessToken')
+    if (!token) {
+      setError('Please sign in to generate a link.')
+      setIsLoading(false)
+      return
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/generate-verification-link`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(formData)
       })
@@ -83,15 +91,15 @@ function GenerateLink() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Generate Verification Link</h2>
-        <p className="text-gray-600 mt-1">Create a secure, personalized verification link for a customer</p>
+    <div className="space-y-6 text-slate-50">
+      <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 border border-white/15 shadow-lg">
+        <h2 className="text-2xl font-bold text-white">Generate Verification Link</h2>
+        <p className="text-slate-200 mt-1">Create a secure, personalized verification link for a customer</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Form */}
-        <Card>
+        <Card className="shadow-xl">
           <CardHeader>
             <CardTitle>Customer Information</CardTitle>
             <CardDescription>Enter the customer's details to generate their unique verification link</CardDescription>
@@ -210,7 +218,7 @@ function GenerateLink() {
         </Card>
 
         {/* Generated Link Display */}
-        <Card>
+        <Card className="shadow-xl">
           <CardHeader>
             <CardTitle>Generated Link</CardTitle>
             <CardDescription>Share this unique link with your customer</CardDescription>

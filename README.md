@@ -98,12 +98,16 @@ pip install -r requirements.txt
 # Set environment variables (create .env file)
 echo "SECRET_KEY=your-super-secret-key-change-this" > .env
 echo "FRONTEND_URL=http://localhost:5173" >> .env
+echo "CORS_ORIGINS=http://localhost:5173" >> .env
+echo "PORT=10000" >> .env
 
-# Run the server
-python src/main.py
+# Run the server (choose one)
+python app.py                           # thin runner
+# or
+PYTHONPATH=. python -m src.main         # explicit module run
 ```
 
-Backend will run on `http://localhost:10000`
+Backend will run on `http://localhost:10000` (set `PORT` to override)
 
 ### **Frontend Setup**
 
@@ -114,7 +118,7 @@ cd frontend
 pnpm install  # or: npm install
 
 # Run development server
-pnpm dev  # or: npm run dev
+pnpm dev --host --port 5173  # or: npm run dev
 ```
 
 Frontend will run on `http://localhost:5173`

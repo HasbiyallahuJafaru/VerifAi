@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ShieldCheck, Loader2 } from 'lucide-react'
+import { API_BASE_URL } from '../config'
 
 function Login() {
   const [email, setEmail] = useState('')
@@ -14,28 +15,58 @@ function Login() {
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
+  const persistSession = (data) => {
+    localStorage.setItem('isAuthenticated', 'true')
+    localStorage.setItem('userEmail', data?.user?.email || email)
+    if (data?.access_token) {
+      localStorage.setItem('accessToken', data.access_token)
+    }
+    if (data?.refresh_token) {
+      localStorage.setItem('refreshToken', data.refresh_token)
+    }
+  }
+
+  const apiCall = async (path, body) => {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      throw new Error(data.error || 'Authentication failed')
+    }
+    return data
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setIsLoading(true)
 
-    // Simulate authentication - replace with real API call
-    setTimeout(() => {
-      if (email && password) {
-        // Store auth token/session
-        localStorage.setItem('isAuthenticated', 'true')
-        localStorage.setItem('userEmail', email)
-        navigate('/dashboard')
-      } else {
-        setError('Please enter both email and password')
+    try {
+      // Try login first; if credentials are new, create user then login
+      let authData
+      try {
+        authData = await apiCall('/api/auth/login', { email, password })
+      } catch (loginErr) {
+        // Attempt signup for first-time user, then login
+        await apiCall('/api/auth/signup', { email, password })
+        authData = await apiCall('/api/auth/login', { email, password })
       }
+
+      persistSession(authData)
+      navigate('/dashboard')
+    } catch (err) {
+      setError(err.message)
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4">
-      <Card className="w-full max-w-md shadow-lg">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4">
+      <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
             <ShieldCheck className="w-10 h-10 text-blue-600" />

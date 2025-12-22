@@ -3,7 +3,7 @@ import Login from './pages/Login'
 import Dashboard from './layouts/Dashboard'
 import Overview from './pages/Overview'
 import GenerateLink from './pages/GenerateLink'
-import VerificationPage from './pages/VerificationPage'
+import Verifications from './pages/Verifications'
 import PublicVerification from './pages/PublicVerification'
 import ApiKeys from './pages/ApiKeys'
 import Analytics from './pages/Analytics'
@@ -30,7 +30,7 @@ function App() {
         >
           <Route index element={<Overview />} />
           <Route path="generate-link" element={<GenerateLink />} />
-          <Route path="verifications" element={<VerificationPage />} />
+          <Route path="verifications" element={<Verifications />} />
           <Route path="api-keys" element={<ApiKeys />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="settings" element={<Settings />} />
