@@ -21,10 +21,29 @@ def signup():
 def login():
     try:
         data = request.get_json() or {}
-        result = authenticate_user(data.get("email"), data.get("password"))
+        email = data.get("email")
+        password = data.get("password")
+        
+        print(f"[LOGIN] Login attempt for email: {email}")
+        
+        if not email:
+            print("[LOGIN] Error: Email is missing")
+            return jsonify({"error": "Email is required", "details": "No email provided"}), 400
+        if not password:
+            print("[LOGIN] Error: Password is missing")
+            return jsonify({"error": "Password is required", "details": "No password provided"}), 400
+            
+        result = authenticate_user(email, password)
+        print(f"[LOGIN] Success for email: {email}")
         return jsonify(result), 200
     except AppError as exc:
-        return jsonify({"error": exc.message}), exc.status_code
+        print(f"[LOGIN] AppError: {exc.message} (status: {exc.status_code})")
+        return jsonify({"error": exc.message, "details": str(exc)}), exc.status_code
+    except Exception as e:
+        print(f"[LOGIN] Unexpected error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Internal server error", "details": str(e)}), 500
 
 
 @bp_auth.post("/refresh")

@@ -29,15 +29,25 @@ def create_user(email: str, password: str) -> dict:
 
 
 def authenticate_user(email: str, password: str) -> dict:
+    print(f"[AUTH SERVICE] Authenticating user: {email}")
     email_normalized = (email or "").strip().lower()
+    
     if not email_normalized or not password:
+        print("[AUTH SERVICE] Missing email or password")
         raise ValidationError("Email and password are required")
 
     with session_scope() as db:
         user = db.scalar(select(User).where(User.email == email_normalized))
-        if not user or not check_password_hash(user.password_hash, password):
+        if not user:
+            print(f"[AUTH SERVICE] User not found: {email_normalized}")
+            raise UnauthorizedError("Invalid credentials")
+        
+        print(f"[AUTH SERVICE] User found: {email_normalized}, verifying password")
+        if not check_password_hash(user.password_hash, password):
+            print(f"[AUTH SERVICE] Password verification failed for: {email_normalized}")
             raise UnauthorizedError("Invalid credentials")
 
+        print(f"[AUTH SERVICE] Authentication successful for: {email_normalized}")
         claims = {"role": user.role, "email": user.email}
         access = create_access_token(identity=user.id, additional_claims=claims)
         refresh = create_refresh_token(identity=user.id)

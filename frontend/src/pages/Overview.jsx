@@ -1,18 +1,48 @@
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle2, XCircle, AlertCircle, TrendingUp } from 'lucide-react'
+import { CheckCircle2, XCircle, AlertCircle, TrendingUp, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { API_BASE_URL } from '../config'
 
 function Overview() {
   const navigate = useNavigate()
+  const [stats, setStats] = useState(null)
+  const [recentVerifications, setRecentVerifications] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem('accessToken')
+      const response = await fetch(`${API_BASE_URL}/api/dashboard-stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      const data = await response.json()
+      
+      if (response.ok) {
+        setStats(data.stats)
+        setRecentVerifications(data.recent || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch dashboard data:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const goToGenerate = () => navigate('/dashboard/generate-link')
   const goToVerifications = () => navigate('/dashboard/verifications')
   const handleExport = () => alert('Export report will be available soon. In the meantime, view verifications to filter and copy data.')
 
-  const stats = [
+  const statsConfig = [
     {
       title: 'Total Verifications',
-      value: '1,234',
+      key: 'total',
       change: '+12.5%',
       trend: 'up',
       icon: CheckCircle2,
@@ -21,7 +51,7 @@ function Overview() {
     },
     {
       title: 'Successful',
-      value: '1,089',
+      key: 'successful',
       change: '+8.2%',
       trend: 'up',
       icon: CheckCircle2,
@@ -30,7 +60,7 @@ function Overview() {
     },
     {
       title: 'Failed',
-      value: '89',
+      key: 'failed',
       change: '-3.1%',
       trend: 'down',
       icon: XCircle,
@@ -39,7 +69,7 @@ function Overview() {
     },
     {
       title: 'Pending',
-      value: '56',
+      key: 'pending',
       change: '+15.3%',
       trend: 'up',
       icon: AlertCircle,
@@ -48,42 +78,56 @@ function Overview() {
     }
   ]
 
-  const recentVerifications = [
-    { id: 'VER-001', user: 'John Doe', status: 'success', time: '2 min ago' },
-    { id: 'VER-002', user: 'Jane Smith', status: 'success', time: '5 min ago' },
-    { id: 'VER-003', user: 'Bob Johnson', status: 'failed', time: '12 min ago' },
-    { id: 'VER-004', user: 'Alice Brown', status: 'success', time: '18 min ago' },
-    { id: 'VER-005', user: 'Charlie Wilson', status: 'pending', time: '25 min ago' },
-  ]
-
   const getStatusColor = (status) => {
     switch (status) {
-      case 'success': return 'text-green-600 bg-green-100'
+      case 'success':
+      case 'verified': return 'text-green-600 bg-green-100'
       case 'failed': return 'text-red-600 bg-red-100'
       case 'pending': return 'text-yellow-600 bg-yellow-100'
       default: return 'text-gray-600 bg-gray-100'
     }
   }
 
+  const formatTimeAgo = (dateString) => {
+    if (!dateString) return 'Unknown'
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now - date) / 1000)
+    
+    if (diffInSeconds < 60) return `${diffInSeconds}s ago`
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+    return `${Math.floor(diffInSeconds / 86400)}d ago`
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => {
-          const Icon = stat.icon
+        {statsConfig.map((statConfig) => {
+          const Icon = statConfig.icon
+          const value = stats ? stats[statConfig.key] : 0
           return (
-            <Card key={stat.title} className="shadow-xl">
+            <Card key={statConfig.title} className="shadow-xl">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-2">{stat.value}</p>
-                    <p className={`text-sm mt-2 ${stat.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                      {stat.change} from last month
+                    <p className="text-sm font-medium text-gray-600">{statConfig.title}</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-2">{value.toLocaleString()}</p>
+                    <p className={`text-sm mt-2 ${statConfig.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                      {statConfig.change} from last month
                     </p>
                   </div>
-                  <div className={`w-12 h-12 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
-                    <Icon className={`w-6 h-6 ${stat.color}`} />
+                  <div className={`w-12 h-12 rounded-lg ${statConfig.bgColor} flex items-center justify-center`}>
+                    <Icon className={`w-6 h-6 ${statConfig.color}`} />
                   </div>
                 </div>
               </CardContent>
@@ -101,20 +145,24 @@ function Overview() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentVerifications.map((verification) => (
-                <div key={verification.id} className="flex items-center justify-between py-3 border-b last:border-0">
-                  <div>
-                    <p className="font-medium text-gray-900">{verification.user}</p>
-                    <p className="text-sm text-gray-500">{verification.id}</p>
+              {recentVerifications.length > 0 ? (
+                recentVerifications.map((verification, index) => (
+                  <div key={verification.tokenId || index} className="flex items-center justify-between py-3 border-b last:border-0">
+                    <div>
+                      <p className="font-medium text-gray-900">{verification.fullName || 'Unknown'}</p>
+                      <p className="text-sm text-gray-500">{verification.tokenId?.substring(0, 12)}...</p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(verification.verificationStatus)}`}>
+                        {verification.verificationStatus || 'pending'}
+                      </span>
+                      <p className="text-xs text-gray-500 mt-1">{formatTimeAgo(verification.createdAt)}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(verification.status)}`}>
-                      {verification.status}
-                    </span>
-                    <p className="text-xs text-gray-500 mt-1">{verification.time}</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-center text-gray-500 py-8">No recent verifications</p>
+              )}
             </div>
           </CardContent>
         </Card>

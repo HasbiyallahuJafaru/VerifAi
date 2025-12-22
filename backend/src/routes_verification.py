@@ -157,6 +157,35 @@ def verifications_admin():
     return jsonify({"verifications": verifications, "total_count": len(verifications)})
 
 
+@bp_verification.get("/dashboard-stats")
+@jwt_required()
+def dashboard_stats():
+    """Get statistics for dashboard overview"""
+    try:
+        verifications = list_verifications()
+        tokens = list_tokens()
+        
+        total_verifications = len(verifications)
+        successful = len([v for v in verifications if v.get('verificationStatus') == 'verified'])
+        failed = len([v for v in verifications if v.get('verificationStatus') == 'failed'])
+        pending = len([t for t in tokens if t.get('status') == 'pending'])
+        
+        # Get recent verifications (last 5)
+        recent = sorted(verifications, key=lambda x: x.get('createdAt', ''), reverse=True)[:5]
+        
+        return jsonify({
+            "stats": {
+                "total": total_verifications,
+                "successful": successful,
+                "failed": failed,
+                "pending": pending
+            },
+            "recent": recent
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @bp_verification.post("/revoke-token")
 @jwt_required()
 def revoke_token():

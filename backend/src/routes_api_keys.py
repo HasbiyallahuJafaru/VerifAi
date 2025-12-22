@@ -18,13 +18,21 @@ def list_keys():
 def create_key():
     try:
         data = request.get_json() or {}
+        print(f"[API Keys] Creating API key with data: {data}")
         result = create_api_key(data)
         result["message"] = "API key created successfully"
         result["warning"] = "Save this key securely. You won't be able to see it again!"
         result["status"] = "success"
+        print(f"[API Keys] Successfully created key: {result.get('apiKeyData', {}).get('id')}")
         return jsonify(result), 201
     except AppError as exc:
+        print(f"[API Keys] AppError during creation: {exc.message}")
         return jsonify({"error": exc.message, "status": "error"}), exc.status_code
+    except Exception as e:
+        print(f"[API Keys] Unexpected error during creation: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Failed to create API key: {str(e)}", "status": "error"}), 500
 
 
 @bp_api_keys.put("/<key_id>")

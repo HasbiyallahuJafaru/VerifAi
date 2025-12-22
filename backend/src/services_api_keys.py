@@ -34,36 +34,45 @@ def create_api_key(payload: Dict) -> Dict:
     expires_in_days = payload.get("expiresInDays")
     expires_at = datetime.utcnow() + timedelta(days=expires_in_days) if expires_in_days else None
 
-    record = ApiKey(
-        id=api_key_id,
-        name=payload["name"],
-        company=payload["company"],
-        key_prefix=key_prefix,
-        key_hash=key_hash,
-        active=True,
-        created_at=datetime.utcnow(),
-        expires_at=expires_at,
-        usage_count=0,
-        permissions=json.dumps(payload.get("permissions", ["verification:create", "verification:read"])),
-        rate_limit=payload.get("rateLimit", 1000),
-        environment=payload.get("environment", "production"),
-    )
+    try:
+        record = ApiKey(
+            id=api_key_id,
+            name=payload["name"],
+            company=payload["company"],
+            key_prefix=key_prefix,
+            key_hash=key_hash,
+            active=True,
+            created_at=datetime.utcnow(),
+            expires_at=expires_at,
+            usage_count=0,
+            permissions=json.dumps(payload.get("permissions", ["verification:create", "verification:read"])),
+            rate_limit=payload.get("rateLimit", 1000),
+            environment=payload.get("environment", "production"),
+        )
 
-    with session_scope() as db:
-        db.add(record)
+        with session_scope() as db:
+            db.add(record)
+            db.flush()  # Force write to get any database errors
+            
+        print(f"[API Keys Service] Created API key: {api_key_id}")
 
-    return {
-        "apiKey": api_key,
-        "apiKeyData": {
-            "id": api_key_id,
-            "name": payload["name"],
-            "company": payload["company"],
-            "keyPrefix": key_prefix,
-            "createdAt": record.created_at.isoformat(),
-            "expiresAt": expires_at.isoformat() if expires_at else None,
-            "permissions": json.loads(record.permissions),
-        },
-    }
+        return {
+            "apiKey": api_key,
+            "apiKeyData": {
+                "id": api_key_id,
+                "name": payload["name"],
+                "company": payload["company"],
+                "keyPrefix": key_prefix,
+                "createdAt": record.created_at.isoformat(),
+                "expiresAt": expires_at.isoformat() if expires_at else None,
+                "permissions": json.loads(record.permissions),
+            },
+        }
+    except Exception as e:
+        print(f"[API Keys Service] Error creating API key: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise ValidationError(f"Failed to create API key: {str(e)}")
 
 
 def list_api_keys() -> List[Dict]:

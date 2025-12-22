@@ -27,17 +27,40 @@ function Login() {
   }
 
   const apiCall = async (path, body) => {
-    const res = await fetch(`${API_BASE_URL}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(body)
-    })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      throw new Error(data.error || 'Authentication failed')
+    console.log('[LOGIN] Making API call to:', `${API_BASE_URL}${path}`)
+    console.log('[LOGIN] Request body:', body)
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      })
+      
+      console.log('[LOGIN] Response status:', res.status, res.statusText)
+      
+      const data = await res.json().catch((e) => {
+        console.error('[LOGIN] Failed to parse JSON response:', e)
+        return {}
+      })
+      
+      console.log('[LOGIN] Response data:', data)
+      
+      if (!res.ok) {
+        const errorMsg = data.error || data.details || 'Authentication failed'
+        console.error('[LOGIN] Request failed:', errorMsg, 'Details:', data.details)
+        throw new Error(errorMsg)
+      }
+      
+      return data
+    } catch (fetchError) {
+      console.error('[LOGIN] Fetch error:', fetchError)
+      if (fetchError.message.includes('Failed to fetch')) {
+        throw new Error('Cannot connect to server. Please check if backend is running on ' + API_BASE_URL)
+      }
+      throw fetchError
     }
-    return data
   }
 
   const handleSubmit = async (e) => {
@@ -46,20 +69,28 @@ function Login() {
     setIsLoading(true)
 
     try {
+      console.log('[LOGIN] Starting login process for:', email)
       // Try login first; if credentials are new, create user then login
       let authData
       try {
+        console.log('[LOGIN] Attempting login...')
         authData = await apiCall('/api/auth/login', { email, password })
+        console.log('[LOGIN] Login successful:', authData)
       } catch (loginErr) {
+        console.log('[LOGIN] Login failed, attempting signup:', loginErr.message)
         // Attempt signup for first-time user, then login
         await apiCall('/api/auth/signup', { email, password })
+        console.log('[LOGIN] Signup successful, attempting login again...')
         authData = await apiCall('/api/auth/login', { email, password })
+        console.log('[LOGIN] Login after signup successful:', authData)
       }
 
       persistSession(authData)
+      console.log('[LOGIN] Session persisted, navigating to dashboard')
       navigate('/dashboard')
     } catch (err) {
-      setError(err.message)
+      console.error('[LOGIN] Final error:', err)
+      setError(err.message || 'An unexpected error occurred')
     } finally {
       setIsLoading(false)
     }
