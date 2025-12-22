@@ -10,3 +10,4 @@
 [build.environment]
   NODE_VERSION = "20"
   PNPM_VERSION = "10.4.1"
+  VITE_API_URL = "https://verifai-backend-owak.onrender.com"
