@@ -16,9 +16,9 @@ services:
       - key: BACKEND_URL
         value: https://verifai-backend-owak.onrender.com
       - key: FRONTEND_URL
-        value: https://verifai.netlify.app
+        value: https://verifaiapp.netlify.app
       - key: CORS_ORIGINS
-        value: https://verifai.netlify.app
+        value: https://verifaiapp.netlify.app
       - key: SECRET_KEY
         generateValue: true
       - key: JWT_SECRET
