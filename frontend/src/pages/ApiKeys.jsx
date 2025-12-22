@@ -51,7 +51,12 @@ function ApiKeys() {
 
   const fetchApiKeys = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/api-keys`)
+      const token = localStorage.getItem('accessToken')
+      const response = await fetch(`${API_BASE_URL}/api/api-keys`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
       const data = await response.json()
       setApiKeys(data.apiKeys || [])
     } catch (err) {
@@ -78,10 +83,12 @@ function ApiKeys() {
         payload.expiresInDays = parseInt(formData.expiresInDays)
       }
 
+      const token = localStorage.getItem('accessToken')
       const response = await fetch(`${API_BASE_URL}/api/api-keys`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(payload)
       })
@@ -104,10 +111,12 @@ function ApiKeys() {
 
   const toggleKeyStatus = async (keyId, currentStatus) => {
     try {
+      const token = localStorage.getItem('accessToken')
       const response = await fetch(`${API_BASE_URL}/api/api-keys/${keyId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ active: !currentStatus })
       })
@@ -126,8 +135,12 @@ function ApiKeys() {
     }
 
     try {
+      const token = localStorage.getItem('accessToken')
       const response = await fetch(`${API_BASE_URL}/api/api-keys/${keyId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       })
 
       if (response.ok) {

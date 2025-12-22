@@ -30,6 +30,7 @@ function Login() {
     const res = await fetch(`${API_BASE_URL}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(body)
     })
     const data = await res.json().catch(() => ({}))

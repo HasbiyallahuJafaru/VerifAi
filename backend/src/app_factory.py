@@ -17,9 +17,19 @@ def create_app() -> Flask:
     app = Flask(__name__)
 
     app.config["JWT_SECRET_KEY"] = settings.jwt_secret
+    app.config["JWT_TOKEN_LOCATION"] = ["headers"]
+    app.config["JWT_HEADER_NAME"] = "Authorization"
+    app.config["JWT_HEADER_TYPE"] = "Bearer"
     JWTManager(app)
 
-    CORS(app, origins=settings.cors_origins, supports_credentials=True)
+    CORS(
+        app,
+        origins=settings.cors_origins,
+        supports_credentials=True,
+        allow_headers=["Content-Type", "Authorization"],
+        expose_headers=["Content-Type"],
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    )
 
     Base.metadata.create_all(bind=engine)
 
