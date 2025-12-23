@@ -11,8 +11,19 @@ bp_auth = Blueprint("auth", __name__, url_prefix="/api/auth")
 def signup():
     try:
         data = request.get_json() or {}
-        created = create_user(data.get("email"), data.get("password"))
-        return jsonify({"message": "User created", "role": created["role"]}), 201
+        result = create_user(data.get("email"), data.get("password"))
+        
+        # If user already existed, return 200 with tokens instead of 201
+        if result.get("already_existed"):
+            return jsonify({
+                "message": "User already exists, signed in successfully",
+                "access_token": result["access_token"],
+                "refresh_token": result["refresh_token"],
+                "user": result["user"]
+            }), 200
+        
+        # New user created
+        return jsonify({"message": "User created", "role": result["role"]}), 201
     except AppError as exc:
         return jsonify({"error": exc.message}), exc.status_code
 

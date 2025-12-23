@@ -18,7 +18,24 @@ def create_user(email: str, password: str) -> dict:
     with session_scope() as db:
         existing = db.scalar(select(User).where(User.email == email_normalized))
         if existing:
-            raise ValidationError("User already exists")
+            # User already exists - authenticate them instead
+            print(f"[AUTH SERVICE] User already exists, proceeding to sign in: {email_normalized}")
+            # Verify password and return authentication tokens
+            if not check_password_hash(existing.password_hash, password):
+                raise UnauthorizedError("Invalid credentials")
+            
+            claims = {"role": existing.role, "email": existing.email}
+            access = create_access_token(identity=existing.id, additional_claims=claims)
+            refresh = create_refresh_token(identity=existing.id)
+            return {
+                "id": existing.id,
+                "email": existing.email,
+                "role": existing.role,
+                "access_token": access,
+                "refresh_token": refresh,
+                "user": {"id": existing.id, "email": existing.email, "role": existing.role},
+                "already_existed": True
+            }
 
         is_first_user = db.scalar(select(User.id)) is None
         role = "admin" if is_first_user else "user"
