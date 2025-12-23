@@ -163,8 +163,9 @@ function PublicVerification() {
   // Validating Token
   if (status === 'validating') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4">
-        <Card className="max-w-lg w-full shadow-lg">
+      <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-cover bg-center bg-no-repeat" style={{backgroundImage: "url('https://images.unsplash.com/photo-1491156855053-9cdff72c7f85?q=80&w=1828&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"}}>
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+        <Card className="relative z-10 max-w-lg w-full shadow-lg">
           <CardContent className="py-12">
             <div className="text-center space-y-4">
               <Loader2 className="w-16 h-16 mx-auto text-blue-600 animate-spin" />
@@ -182,8 +183,9 @@ function PublicVerification() {
   // Invalid Token
   if (status === 'invalid') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4">
-        <Card className="max-w-lg w-full shadow-lg">
+      <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-cover bg-center bg-no-repeat" style={{backgroundImage: "url('https://images.unsplash.com/photo-1491156855053-9cdff72c7f85?q=80&w=1828&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"}}>
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+        <Card className="relative z-10 max-w-lg w-full shadow-lg">
           <CardContent className="py-8">
             <div className="text-center space-y-4">
               <AlertTriangle className="w-16 h-16 mx-auto text-red-600" />
@@ -213,8 +215,9 @@ function PublicVerification() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4">
-      <div className="max-w-lg w-full">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-cover bg-center bg-no-repeat" style={{backgroundImage: "url('https://images.unsplash.com/photo-1491156855053-9cdff72c7f85?q=80&w=1828&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"}}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+      <div className="relative z-10 max-w-lg w-full">
         {/* Pending - Show Consent Request */}
         {status === 'pending' && verificationData && (
           <Card className="shadow-lg">
