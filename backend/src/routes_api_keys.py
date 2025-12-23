@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, request
 
 from .auth0_utils import requires_auth
-
 from .errors import AppError
 from .services_api_keys import create_api_key, list_api_keys, update_api_key, deactivate_api_key
 

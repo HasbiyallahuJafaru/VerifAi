@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useAuth0 } from '@auth0/auth0-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,6 +32,7 @@ import {
 import { API_BASE_URL } from '../config'
 
 function ApiKeys() {
+  const { getAccessTokenSilently } = useAuth0()
   const [apiKeys, setApiKeys] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -45,26 +47,26 @@ function ApiKeys() {
   const [copied, setCopied] = useState(false)
   const [showKey, setShowKey] = useState(false)
 
-  useEffect(() => {
-    fetchApiKeys()
-  }, [])
-
-  const fetchApiKeys = async () => {
+  const fetchApiKeys = useCallback(async () => {
     try {
       const token = await getAccessTokenSilently()
-      const responselocalStorage.getItem('accessToken'L}/api/api-keys`, {
+      const response = await fetch(`${API_BASE_URL}/api/api-keys`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
       const data = await response.json()
       setApiKeys(data.apiKeys || [])
-    } catch (err) {
+    } catch {
       setError('Failed to load API keys')
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [getAccessTokenSilently])
+
+  useEffect(() => {
+    fetchApiKeys()
+  }, [fetchApiKeys])
 
   const handleCreate = async (e) => {
     e.preventDefault()
@@ -84,7 +86,7 @@ function ApiKeys() {
       }
 
       const token = await getAccessTokenSilently()
-      const responselocalStorage.getItem('accessToken'L}/api/api-keys`, {
+      const response = await fetch(`${API_BASE_URL}/api/api-keys`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,7 +113,7 @@ function ApiKeys() {
 
   const toggleKeyStatus = async (keyId, currentStatus) => {
     try {
-      const token = localStorage.getItem('accessToken')
+      const token = await getAccessTokenSilently()
       const response = await fetch(`${API_BASE_URL}/api/api-keys/${keyId}`, {
         method: 'PUT',
         headers: {
@@ -124,7 +126,7 @@ function ApiKeys() {
       if (response.ok) {
         await fetchApiKeys()
       }
-    } catch (err) {
+    } catch {
       setError('Failed to update API key')
     }
   }
@@ -135,7 +137,7 @@ function ApiKeys() {
     }
 
     try {
-      const token = localStorage.getItem('accessToken')
+      const token = await getAccessTokenSilently()
       const response = await fetch(`${API_BASE_URL}/api/api-keys/${keyId}`, {
         method: 'DELETE',
         headers: {
@@ -146,7 +148,7 @@ function ApiKeys() {
       if (response.ok) {
         await fetchApiKeys()
       }
-    } catch (err) {
+    } catch {
       setError('Failed to delete API key')
     }
   }

@@ -2,7 +2,6 @@ import secrets
 from flask import Blueprint, jsonify, request
 
 from .auth0_utils import requires_auth
-
 from .config import load_settings
 from .errors import AppError
 from .models import VerificationToken
