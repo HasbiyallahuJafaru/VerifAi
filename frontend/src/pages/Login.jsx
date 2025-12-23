@@ -56,14 +56,8 @@ function Login() {
     setIsLoading(true)
 
     try {
-      let authData
-      try {
-        authData = await apiCall('/api/auth/login', { email, password })
-      } catch {
-        await apiCall('/api/auth/signup', { email, password })
-        authData = await apiCall('/api/auth/login', { email, password })
-      }
-
+      // Try to login first
+      const authData = await apiCall('/api/auth/login', { email, password })
       persistSession(authData)
       navigate('/dashboard')
     } catch (err) {
