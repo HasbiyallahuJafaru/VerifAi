@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Outlet, Link, useLocation } from 'react-router-dom'
-import { useAuth0 } from '@auth0/auth0-react'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { 
   ShieldCheck, 
@@ -18,10 +17,14 @@ import {
 function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
-  const { logout, user } = useAuth0()
+  const navigate = useNavigate()
 
   const handleLogout = () => {
-    logout({ logoutParams: { returnTo: window.location.origin } })
+    localStorage.removeItem('isAuthenticated')
+    localStorage.removeItem('userEmail')
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    navigate('/login')
   }
 
   const navigation = [

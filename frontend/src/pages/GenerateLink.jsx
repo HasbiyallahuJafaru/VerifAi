@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useAuth0 } from '@auth0/auth0-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,7 +8,6 @@ import { CheckCircle2, Copy, ExternalLink, Loader2 } from 'lucide-react'
 import { API_BASE_URL } from '../config'
 
 function GenerateLink() {
-  const { getAccessTokenSilently } = useAuth0()
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -38,8 +36,14 @@ function GenerateLink() {
     setGeneratedLink(null)
 
     try {
-      const token = await getAccessTokenSilently()
-      const response = await fetch(`${API_BASE_URL}/api/generate-verification-link`, {
+    const token = localStorage.getItem('accessToken')
+    if (!token) {
+      setError('Please sign in to generate a link.')
+      setIsLoading(false)
+      return
+    }
+
+    try {}/api/generate-verification-link`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

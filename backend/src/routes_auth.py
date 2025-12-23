@@ -1,37 +1,53 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
 
-from .auth0_utils import requires_auth, current_user_sub
 from .errors import AppError
+from .services_auth import authenticate_user, create_user, get_user
 
 bp_auth = Blueprint("auth", __name__, url_prefix="/api/auth")
 
 
 @bp_auth.post("/signup")
 def signup():
-    return jsonify({"error": "Local signup disabled. Use Auth0."}), 410
+    try:
+        data = request.get_json() or {}
+        created = create_user(data.get("email"), data.get("password"))
+        return jsonify({"message": "User created", "role": created["role"]}), 201
+    except AppError as exc:
+        return jsonify({"error": exc.message}), exc.status_code
 
 
 @bp_auth.post("/login")
 def login():
-    return jsonify({"error": "Local login disabled. Use Auth0."}), 410
+    try:
+        data = request.get_json() or {}
+        email = data.get("email")
+        password = data.get("password")
+        
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
+        if not password:
+            return jsonify({"error": "Password is required"}), 400
+            
+        result = authenticate_user(email, password)
+        return jsonify(result), 200
+    except AppError as exc:
+        return jsonify({"error": exc.message}), exc.status_code
 
 
 @bp_auth.post("/refresh")
+@jwt_required(refresh=True)
 def refresh():
-    return jsonify({"error": "Local refresh disabled. Use Auth0."}), 410
+    identity = get_jwt_identity()
+    token = create_access_token(identity=identity)
+    return jsonify({"access_token": token})
 
 
 @bp_auth.get("/me")
+@jwt_required()
 def me():
-    """Return Auth0 token claims for the current user."""
-    @requires_auth
-    def _inner():
-        # auth0_utils stores decoded JWT in flask.g.current_user
-        from flask import g
-
-        claims = getattr(g, "current_user", {}) or {}
-        sub = claims.get("sub") or current_user_sub()
-        email = claims.get("email") or claims.get("upn")
-        return jsonify({"sub": sub, "email": email, "claims": claims})
-
-    return _inner()
+    user_id = get_jwt_identity()
+    user = get_user(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify(user)

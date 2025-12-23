@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useAuth0 } from '@auth0/auth0-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,7 +31,6 @@ import {
 import { API_BASE_URL } from '../config'
 
 function ApiKeys() {
-  const { getAccessTokenSilently } = useAuth0()
   const [apiKeys, setApiKeys] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -54,7 +52,7 @@ function ApiKeys() {
   const fetchApiKeys = async () => {
     try {
       const token = await getAccessTokenSilently()
-      const response = await fetch(`${API_BASE_URL}/api/api-keys`, {
+      const responselocalStorage.getItem('accessToken'L}/api/api-keys`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -86,7 +84,7 @@ function ApiKeys() {
       }
 
       const token = await getAccessTokenSilently()
-      const response = await fetch(`${API_BASE_URL}/api/api-keys`, {
+      const responselocalStorage.getItem('accessToken'L}/api/api-keys`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,7 +111,7 @@ function ApiKeys() {
 
   const toggleKeyStatus = async (keyId, currentStatus) => {
     try {
-      const token = await getAccessTokenSilently()
+      const token = localStorage.getItem('accessToken')
       const response = await fetch(`${API_BASE_URL}/api/api-keys/${keyId}`, {
         method: 'PUT',
         headers: {
@@ -137,7 +135,7 @@ function ApiKeys() {
     }
 
     try {
-      const token = await getAccessTokenSilently()
+      const token = localStorage.getItem('accessToken')
       const response = await fetch(`${API_BASE_URL}/api/api-keys/${keyId}`, {
         method: 'DELETE',
         headers: {
