@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useAuth0 } from '@auth0/auth0-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle2, XCircle, AlertCircle, TrendingUp, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -6,6 +7,7 @@ import { API_BASE_URL } from '../config'
 
 function Overview() {
   const navigate = useNavigate()
+  const { getAccessTokenSilently } = useAuth0()
   const [stats, setStats] = useState(null)
   const [recentVerifications, setRecentVerifications] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -16,7 +18,7 @@ function Overview() {
 
   const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem('accessToken')
+      const token = await getAccessTokenSilently()
       const response = await fetch(`${API_BASE_URL}/api/dashboard-stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
