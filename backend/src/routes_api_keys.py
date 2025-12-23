@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required
 
-from .auth0_utils import requires_auth
 from .errors import AppError
 from .services_api_keys import create_api_key, list_api_keys, update_api_key, deactivate_api_key
 
@@ -8,13 +8,13 @@ bp_api_keys = Blueprint("api_keys", __name__, url_prefix="/api/api-keys")
 
 
 @bp_api_keys.get("")
-@requires_auth
+@jwt_required()
 def list_keys():
     return jsonify({"apiKeys": list_api_keys()})
 
 
 @bp_api_keys.post("")
-@requires_auth
+@jwt_required()
 def create_key():
     try:
         data = request.get_json() or {}
@@ -36,7 +36,7 @@ def create_key():
 
 
 @bp_api_keys.put("/<key_id>")
-@requires_auth
+@jwt_required()
 def update_key(key_id):
     try:
         data = request.get_json() or {}
@@ -47,7 +47,7 @@ def update_key(key_id):
 
 
 @bp_api_keys.delete("/<key_id>")
-@requires_auth
+@jwt_required()
 def delete_key(key_id):
     try:
         deactivate_api_key(key_id)

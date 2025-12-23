@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
-import { useAuth0 } from '@auth0/auth0-react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle2, XCircle, AlertCircle, TrendingUp, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -7,35 +6,34 @@ import { API_BASE_URL } from '../config'
 
 function Overview() {
   const navigate = useNavigate()
-  const { getAccessTokenSilently } = useAuth0()
   const [stats, setStats] = useState(null)
   const [recentVerifications, setRecentVerifications] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    fetchDashboardData()
-  }, [fetchDashboardData])
-
-  const fetchDashboardData = useCallback(async () => {
-    try {
-      const token = await getAccessTokenSilently()
-      const response = await fetch(`${API_BASE_URL}/api/dashboard-stats`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem('accessToken')
+        const response = await fetch(`${API_BASE_URL}/api/dashboard-stats`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        const data = await response.json()
+        
+        if (response.ok) {
+          setStats(data.stats)
+          setRecentVerifications(data.recent || [])
         }
-      })
-      const data = await response.json()
-      
-      if (response.ok) {
-        setStats(data.stats)
-        setRecentVerifications(data.recent || [])
+      } catch (err) {
+        console.error('Failed to fetch dashboard data:', err)
+      } finally {
+        setIsLoading(false)
       }
-    } catch (err) {
-      console.error('Failed to fetch dashboard data:', err)
-    } finally {
-      setIsLoading(false)
     }
-  }, [getAccessTokenSilently])
+
+    fetchDashboardData()
+  }, [])
 
   const goToGenerate = () => navigate('/dashboard/generate-link')
   const goToVerifications = () => navigate('/dashboard/verifications')
