@@ -2,7 +2,6 @@ from datetime import datetime
 
 from flask import Flask, jsonify
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager
 
 from .config import load_settings
 from .database import Base, engine
@@ -15,12 +14,6 @@ from .routes_verification import bp_verification
 def create_app() -> Flask:
     settings = load_settings()
     app = Flask(__name__)
-
-    app.config["JWT_SECRET_KEY"] = settings.jwt_secret
-    app.config["JWT_TOKEN_LOCATION"] = ["headers"]
-    app.config["JWT_HEADER_NAME"] = "Authorization"
-    app.config["JWT_HEADER_TYPE"] = "Bearer"
-    JWTManager(app)
 
     CORS(
         app,

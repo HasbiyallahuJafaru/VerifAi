@@ -2,6 +2,11 @@ import os
 from dataclasses import dataclass
 from typing import List
 
+from dotenv import load_dotenv
+
+# Load .env for local/dev; does not override existing env vars
+load_dotenv()
+
 
 @dataclass(frozen=True)
 class Settings:
@@ -16,6 +21,8 @@ class Settings:
     upload_folder: str
     max_file_size_bytes: int
     allowed_extensions: List[str]
+    auth0_domain: str
+    auth0_audience: str
 
 
 def load_settings() -> Settings:
@@ -34,4 +41,6 @@ def load_settings() -> Settings:
         upload_folder=os.environ.get("UPLOAD_FOLDER", "/tmp/uploads"),
         max_file_size_bytes=10 * 1024 * 1024,
         allowed_extensions=["pdf", "png", "jpg", "jpeg", "gif", "doc", "docx"],
+        auth0_domain=os.environ.get("AUTH0_DOMAIN", ""),
+        auth0_audience=os.environ.get("AUTH0_AUDIENCE", ""),
     )

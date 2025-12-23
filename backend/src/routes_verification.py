@@ -1,6 +1,7 @@
 import secrets
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
+
+from .auth0_utils import requires_auth
 
 from .config import load_settings
 from .errors import AppError
@@ -32,7 +33,7 @@ def _token_payload_from_request(data: dict, token_id: str) -> dict:
 
 
 @bp_verification.post("/generate-verification-link")
-@jwt_required()
+@requires_auth
 def generate_link():
     try:
         data = request.get_json() or {}
@@ -144,21 +145,21 @@ def submit_verification():
 
 
 @bp_verification.get("/verification-tokens")
-@jwt_required()
+@requires_auth
 def tokens_admin():
     tokens = list_tokens()
     return jsonify({"tokens": tokens, "total_count": len(tokens)})
 
 
 @bp_verification.get("/verifications")
-@jwt_required()
+@requires_auth
 def verifications_admin():
     verifications = list_verifications()
     return jsonify({"verifications": verifications, "total_count": len(verifications)})
 
 
 @bp_verification.get("/dashboard-stats")
-@jwt_required()
+@requires_auth
 def dashboard_stats():
     """Get statistics for dashboard overview"""
     try:
@@ -187,7 +188,7 @@ def dashboard_stats():
 
 
 @bp_verification.post("/revoke-token")
-@jwt_required()
+@requires_auth
 def revoke_token():
     try:
         data = request.get_json() or {}
@@ -208,7 +209,7 @@ def deprecated_notice(*args, **kwargs):
 
 
 @bp_verification.get("/v1/verifications")
-@jwt_required()
+@requires_auth
 def api_list_by_key():
     # Deprecated placeholder; kept for compatibility but signals removal.
     return jsonify({"verifications": []})
