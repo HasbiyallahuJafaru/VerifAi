@@ -119,3 +119,90 @@ def get_user(user_id: str) -> Optional[dict]:
         if not user:
             return None
         return {"id": user.id, "email": user.email, "role": user.role}
+
+
+def list_all_users() -> list[dict]:
+    """List all users in the system"""
+    try:
+        logger.info("[LIST_ALL_USERS] Fetching all users")
+        with session_scope() as db:
+            users = db.scalars(select(User)).all()
+            result = [
+                {
+                    "id": user.id,
+                    "email": user.email,
+                    "role": user.role,
+                    "created_at": user.created_at.isoformat() if user.created_at else None
+                }
+                for user in users
+            ]
+            logger.info(f"[LIST_ALL_USERS] Found {len(result)} users")
+            return result
+    except Exception as e:
+        logger.error(f"[LIST_ALL_USERS] Error: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise
+
+
+def create_user_by_admin(email: str, password: str, role: str = "user") -> dict:
+    """Create a new user by admin"""
+    try:
+        logger.info(f"[CREATE_USER_BY_ADMIN] Creating user: {email} with role: {role}")
+        email_normalized = email.strip().lower()
+        
+        if not email_normalized or not password:
+            raise ValidationError("Email and password are required")
+        
+        if role not in ["admin", "user"]:
+            raise ValidationError("Role must be 'admin' or 'user'")
+
+        with session_scope() as db:
+            # Check if user exists
+            existing = db.scalar(select(User).where(User.email == email_normalized))
+            if existing:
+                logger.warning(f"[CREATE_USER_BY_ADMIN] User already exists: {email_normalized}")
+                raise ValidationError("User with this email already exists")
+            
+            # Create new user
+            user = User(
+                email=email_normalized,
+                password_hash=generate_password_hash(password),
+                role=role
+            )
+            db.add(user)
+            db.flush()
+            
+            logger.info(f"[CREATE_USER_BY_ADMIN] User created successfully: {email_normalized}")
+            return {
+                "id": user.id,
+                "email": user.email,
+                "role": user.role,
+                "created_at": user.created_at.isoformat() if user.created_at else None
+            }
+    except (ValidationError, UnauthorizedError):
+        raise
+    except Exception as e:
+        logger.error(f"[CREATE_USER_BY_ADMIN] Error: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise ValidationError(f"User creation failed: {str(e)}")
+
+
+def delete_user_by_admin(user_id: str) -> None:
+    """Delete a user by admin"""
+    try:
+        logger.info(f"[DELETE_USER_BY_ADMIN] Deleting user: {user_id}")
+        with session_scope() as db:
+            user = db.get(User, user_id)
+            if not user:
+                logger.warning(f"[DELETE_USER_BY_ADMIN] User not found: {user_id}")
+                raise ValidationError("User not found")
+            
+            db.delete(user)
+            db.flush()
+            logger.info(f"[DELETE_USER_BY_ADMIN] User deleted successfully: {user_id}")
+    except ValidationError:
+        raise
+    except Exception as e:
+        logger.error(f"[DELETE_USER_BY_ADMIN] Error: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise ValidationError(f"User deletion failed: {str(e)}")

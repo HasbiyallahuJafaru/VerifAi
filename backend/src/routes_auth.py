@@ -95,3 +95,101 @@ def me():
     if not user:
         return jsonify({"error": "User not found"}), 404
     return jsonify(user)
+
+
+@bp_auth.get("/users")
+@jwt_required()
+def list_users():
+    """List all users (admin only)"""
+    try:
+        from flask_jwt_extended import get_jwt
+        from .services_auth import list_all_users
+        
+        claims = get_jwt()
+        user_role = claims.get('role')
+        
+        logger.info(f"[LIST_USERS] User role: {user_role}")
+        
+        if user_role != 'admin':
+            logger.warning(f"[LIST_USERS] Non-admin user attempted to list users")
+            return jsonify({"error": "Admin access required"}), 403
+        
+        users = list_all_users()
+        logger.info(f"[LIST_USERS] Returning {len(users)} users")
+        return jsonify({"users": users}), 200
+    except Exception as e:
+        logger.error(f"[LIST_USERS] Error: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({"error": f"Failed to list users: {str(e)}"}), 500
+
+
+@bp_auth.post("/users")
+@jwt_required()
+def create_user_admin():
+    """Create a new user (admin only)"""
+    try:
+        from flask_jwt_extended import get_jwt
+        from .services_auth import create_user_by_admin
+        
+        claims = get_jwt()
+        user_role = claims.get('role')
+        
+        if user_role != 'admin':
+            logger.warning(f"[CREATE_USER_ADMIN] Non-admin attempted to create user")
+            return jsonify({"error": "Admin access required"}), 403
+        
+        data = request.get_json() or {}
+        email = data.get("email")
+        password = data.get("password")
+        role = data.get("role", "user")
+        
+        logger.info(f"[CREATE_USER_ADMIN] Creating user: {email} with role: {role}")
+        
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
+        if not password:
+            return jsonify({"error": "Password is required"}), 400
+        
+        result = create_user_by_admin(email, password, role)
+        logger.info(f"[CREATE_USER_ADMIN] User created: {email}")
+        return jsonify({"message": "User created successfully", "user": result}), 201
+    except AppError as exc:
+        logger.error(f"[CREATE_USER_ADMIN] AppError: {exc.message}")
+        return jsonify({"error": exc.message}), exc.status_code
+    except Exception as e:
+        logger.error(f"[CREATE_USER_ADMIN] Error: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({"error": f"Failed to create user: {str(e)}"}), 500
+
+
+@bp_auth.delete("/users/<user_id>")
+@jwt_required()
+def delete_user_admin(user_id):
+    """Delete a user (admin only)"""
+    try:
+        from flask_jwt_extended import get_jwt
+        from .services_auth import delete_user_by_admin
+        
+        claims = get_jwt()
+        user_role = claims.get('role')
+        current_user_id = get_jwt_identity()
+        
+        if user_role != 'admin':
+            logger.warning(f"[DELETE_USER] Non-admin attempted to delete user")
+            return jsonify({"error": "Admin access required"}), 403
+        
+        if user_id == current_user_id:
+            logger.warning(f"[DELETE_USER] Admin attempted to delete themselves")
+            return jsonify({"error": "Cannot delete your own account"}), 400
+        
+        logger.info(f"[DELETE_USER] Deleting user: {user_id}")
+        delete_user_by_admin(user_id)
+        logger.info(f"[DELETE_USER] User deleted: {user_id}")
+        return jsonify({"message": "User deleted successfully"}), 200
+    except AppError as exc:
+        logger.error(f"[DELETE_USER] AppError: {exc.message}")
+        return jsonify({"error": exc.message}), exc.status_code
+    except Exception as e:
+        logger.error(f"[DELETE_USER] Error: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({"error": f"Failed to delete user: {str(e)}"}), 500
